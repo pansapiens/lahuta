@@ -34,6 +34,29 @@ target_include_directories(lahuta PRIVATE
 target_link_libraries(lahuta PRIVATE lahuta_core)
 target_compile_features(lahuta PRIVATE cxx_std_17)
 
+if(LAHUTA_CLI_STATIC)
+  set_target_properties(lahuta PROPERTIES LINKER_LANGUAGE CXX)
+  target_link_options(lahuta PRIVATE -static)
+  if(UNIX AND NOT APPLE)
+    target_link_options(lahuta PRIVATE -static-libgcc -static-libstdc++)
+    
+    # Manually search for static librt.a in standard locations
+    set(LIBRT_CANDIDATES
+      /usr/lib/x86_64-linux-gnu/librt.a
+      /usr/local/lib/librt.a
+      /usr/lib/librt.a
+    )
+    
+    foreach(LIBRT_CAND ${LIBRT_CANDIDATES})
+      if(EXISTS "${LIBRT_CAND}")
+        target_link_libraries(lahuta PRIVATE "${LIBRT_CAND}")
+        message(STATUS "Using static librt: ${LIBRT_CAND}")
+        break()
+      endif()
+    endforeach()
+  endif()
+endif()
+
 if(BUILD_TESTING)
   add_test(NAME lahuta_help COMMAND lahuta --help)
   set_tests_properties(lahuta_help PROPERTIES PASS_REGULAR_EXPRESSION "Usage: lahuta \\[global-options\\]")

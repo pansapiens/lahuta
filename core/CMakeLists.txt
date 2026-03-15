@@ -92,7 +92,40 @@ set(HWY_ENABLE_CONTRIB    OFF CACHE BOOL "Disable highway contrib targets" FORCE
 set(HWY_ENABLE_INSTALL    OFF CACHE BOOL "Disable highway install targets" FORCE)
 
 
-find_package(ZLIB REQUIRED)
+if(LAHUTA_CLI_STATIC)
+  find_path(ZLIB_INCLUDE_DIR NAMES zlib.h HINTS /usr/include /usr/local/include NO_DEFAULT_PATH)
+  
+  # Manually search for static libz.a in standard locations
+  set(ZLIB_CANDIDATES
+    /usr/lib/x86_64-linux-gnu/libz.a
+    /usr/local/lib/libz.a
+    /usr/lib/libz.a
+  )
+  
+  foreach(ZLIB_CAND ${ZLIB_CANDIDATES})
+    if(EXISTS "${ZLIB_CAND}")
+      set(ZLIB_STATIC_LIBRARY "${ZLIB_CAND}" CACHE FILEPATH "Static ZLIB library" FORCE)
+      break()
+    endif()
+  endforeach()
+  
+  if(ZLIB_STATIC_LIBRARY)
+    if(ZLIB_INCLUDE_DIR)
+      add_library(ZLIB::ZLIB UNKNOWN IMPORTED)
+      set_target_properties(ZLIB::ZLIB PROPERTIES
+        IMPORTED_LOCATION "${ZLIB_STATIC_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE_DIR}"
+      )
+      message(STATUS "Using static ZLIB: ${ZLIB_STATIC_LIBRARY}")
+    else()
+      message(FATAL_ERROR "zlib.h not found. Install zlib1g-dev or zlib-devel")
+    endif()
+  else()
+    message(FATAL_ERROR "Static ZLIB not found in standard locations: ${ZLIB_CANDIDATES}")
+  endif()
+else()
+  find_package(ZLIB REQUIRED)
+endif()
 
 # Boost headers
 if(LAHUTA_VENDOR_BOOST)

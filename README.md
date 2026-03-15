@@ -80,6 +80,30 @@ pip install lahuta
     ```bash
     cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DLAHUTA_BUILD_CLI=OFF
     ```
+  - CLI-only builds (no Python bindings):
+    ```bash
+    cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLAHUTA_BUILD_PYTHON=OFF -DLAHUTA_BUILD_CLI=ON -DLAHUTA_BUILD_EXAMPLES=ON
+    cmake --build build -j 8 && cmake --install build
+    ```
+  - Fully static CLI binary (minimal system dependencies):
+    ```bash
+    cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLAHUTA_BUILD_PYTHON=OFF -DLAHUTA_BUILD_CLI=ON -DLAHUTA_CLI_STATIC=ON -DLAHUTA_BUILD_SHARED_CORE=OFF
+    cmake --build build -j 8
+    ```
+    The resulting binary (at `build/cli/lahuta`) is fully statically linked and has no system library dependencies. Verify with:
+    ```bash
+    ldd build/cli/lahuta
+    # Should output: "not a dynamic executable"
+    ```
+    **Note**: Static build requires static development libraries. On Ubuntu/Debian:
+      ```bash
+      sudo apt install libz-dev
+      ```
+      On RHEL/CentOS:
+      ```bash
+      sudo yum install zlib-devel
+      ```
+      librt.a is part of glibc and available at /usr/lib/x86_64-linux-gnu/librt.a.
   - Optional test configurations:
     - `-DENABLE_ASAN=ON` - Enable AddressSanitizer and UndefinedBehaviorSanitizer
     - `-DENABLE_TSAN=ON` - Enable ThreadSanitizer
